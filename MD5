@@ -1,4 +1,4 @@
-0b2d5552177a5bf44fb9f0a0b3f07101 *DESCRIPTION
+157067c9dd0a4855b0d14de44562248e *DESCRIPTION
 19ed52962b5b62560eb826bd6f49fbcf *NAMESPACE
 ec8830f374350076affe44ea163734f3 *R/RcppExports.R
 f99a7ec587efd1a9c57b350f8db3bab2 *R/fifa20.R
@@ -14,10 +14,10 @@ d4b7981aa8460f5206733128c4ecc158 *R/set_reference_dataset.R
 018d775c88a79e490c97cfcfe4763a0b *R/treeshap.R
 5488ad0e31dd93c218740e1c34f739e6 *R/unify.R
 bc6276fcc395d1e719c06e81da00754b *R/unify_gbm.R
-cce2468ca47ef970f3e2d48e606999e8 *R/unify_lightgbm.R
+2f98346d41e3d405bf6117c3456457b0 *R/unify_lightgbm.R
 e4438e12527923b7b40dbcbd71c48f66 *R/unify_randomForest.R
 f492c0448e8017b28fda08b089478c07 *R/unify_ranger.R
-f4c264bad3dd28e41b98282f7c7a6222 *R/unify_ranger_surv.R
+45cc519bb74da7f05c947b0905090da2 *R/unify_ranger_surv.R
 7138f279fc73e59c0a1d7aefe6d19df9 *R/unify_xgboost.R
 be492e5e13bcbbdf8d129aa76683ca4a *data/fifa20.rda
 f8d609a186c77849b3bf7014c14b0a4e *man/colors_drwhy.Rd
@@ -29,7 +29,7 @@ df1d89bd81d7e967b6ea26fc2df3ad66 *man/figures/README-plot_importance_example-1.p
 b396f784323b1cdaadc460413ded3bb9 *man/gbm.unify.Rd
 2013d0fdee488923af914b184355c798 *man/is.model_unified.Rd
 b530efb823ef05584d37dceb87e84586 *man/is.treeshap.Rd
-0b098dcb28e15c4fbc44b3f25797f959 *man/lightgbm.unify.Rd
+9ac868a7eaffd44b9f09eb7c98dade14 *man/lightgbm.unify.Rd
 a127e4e3364ac871f1089edf7d4287a1 *man/model_unified.object.Rd
 165c87b677bb09aa24345ed9c744826b *man/model_unified_multioutput.object.Rd
 6fe8588999f468a6af18afe75170dd86 *man/plot_contribution.Rd

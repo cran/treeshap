@@ -1,7 +1,7 @@
 Package: treeshap
 Title: Compute SHAP Values for Your Tree-Based Models Using the
         'TreeSHAP' Algorithm
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: c(
     person("Konrad", "Komisarczyk", email = "komisarczykkonrad@gmail.com", role = "aut"),
     person("Pawel", "Kozminski", email = "pkozminski99@gmail.com", role = "aut"),
@@ -29,7 +29,7 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 NeedsCompilation: yes
-Packaged: 2023-10-24 15:32:53 UTC; krzyzinskim
+Packaged: 2024-01-22 13:05:31 UTC; krzyzinskim
 Author: Konrad Komisarczyk [aut],
   Pawel Kozminski [aut],
   Szymon Maksymiuk [aut] (<https://orcid.org/0000-0002-3120-1601>),
@@ -39,4 +39,4 @@ Author: Konrad Komisarczyk [aut],
   Przemyslaw Biecek [aut, cph] (<https://orcid.org/0000-0001-8423-1823>)
 Maintainer: Mateusz Krzyzinski <krzyzinskimateusz23@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-10-24 16:00:02 UTC
+Date/Publication: 2024-01-22 15:20:06 UTC
