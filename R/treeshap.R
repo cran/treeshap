@@ -13,13 +13,10 @@
 #'
 #' @export
 #'
-#' @importFrom Rcpp sourceCpp
-#' @importFrom utils setTxtProgressBar txtProgressBar
-#' @useDynLib treeshap
-#'
 #' @seealso
 #' \code{\link{xgboost.unify}} for \code{XGBoost models}
 #' \code{\link{lightgbm.unify}} for \code{LightGBM models}
+#' \code{\link{gpboost.unify}} for \code{GPBoost models}
 #' \code{\link{gbm.unify}} for \code{GBM models}
 #' \code{\link{randomForest.unify}} for \code{randomForest models}
 #' \code{\link{ranger.unify}} for \code{ranger models}
@@ -27,32 +24,45 @@
 #'
 #' @examples
 #' \donttest{
-#' library(xgboost)
-#' data <- fifa20$data[colnames(fifa20$data) != 'work_rate']
-#' target <- fifa20$target
+#' if (requireNamespace("xgboost", quietly = TRUE)) {
+#'   library(xgboost)
+#'   data <- fifa20$data[colnames(fifa20$data) != 'work_rate']
+#'   target <- fifa20$target
 #'
-#' # calculating simple SHAP values
-#' param <- list(objective = "reg:squarederror", max_depth = 3)
-#' xgb_model <- xgboost::xgboost(as.matrix(data), params = param, label = target,
-#'                               nrounds = 20, verbose = FALSE)
-#' unified_model <- xgboost.unify(xgb_model, as.matrix(data))
-#' treeshap1 <- treeshap(unified_model, head(data, 3))
-#' plot_contribution(treeshap1, obs = 1)
-#' treeshap1$shaps
+#'   # calculating simple SHAP values
+#'   xgb_model <- xgboost::xgboost(
+#'    x = as.matrix(data),
+#'    y = target,
+#'    objective = "reg:squarederror",
+#'    max_depth = 3,
+#'    nrounds = 20,
+#'    nthreads = 1
+#'   )
+#'   unified_model <- xgboost.unify(xgb_model, as.matrix(data))
+#'   treeshap1 <- treeshap(unified_model, head(data, 3))
+#'   plot_contribution(treeshap1, obs = 1)
+#'   treeshap1$shaps
 #'
-#' # It's possible to calcualte explanation over different part of the data set
+#'   # It's possible to calcualte explanation over different part of the data set
 #'
-#' unified_model_rec <- set_reference_dataset(unified_model, data[1:1000, ])
-#' treeshap_rec <- treeshap(unified_model, head(data, 3))
-#' plot_contribution(treeshap_rec, obs = 1)
+#'   unified_model_rec <- set_reference_dataset(unified_model, data[1:1000, ])
+#'   treeshap_rec <- treeshap(unified_model, head(data, 3))
+#'   plot_contribution(treeshap_rec, obs = 1)
 #'
-#' # calculating SHAP interaction values
-#' param2 <- list(objective = "reg:squarederror", max_depth = 7)
-#' xgb_model2 <- xgboost::xgboost(as.matrix(data), params = param2, label = target, nrounds = 10)
-#' unified_model2 <- xgboost.unify(xgb_model2, as.matrix(data))
-#' treeshap2 <- treeshap(unified_model2, head(data, 3), interactions = TRUE)
-#' treeshap2$interactions
-#' }
+#'   # calculating SHAP interaction values
+#'   xgb_model2 <- xgboost::xgboost(
+#'    x = as.matrix(data),
+#'    y = target,
+#'    objective = "reg:squarederror",
+#'    max_depth = 7,
+#'    nrounds = 10,
+#'    nthreads = 1
+#'   )
+#'   unified_model2 <- xgboost.unify(xgb_model2, as.matrix(data))
+#'   treeshap2 <- treeshap(unified_model2, head(data, 3), interactions = TRUE)
+#'   treeshap2$interactions
+#' }}
+#'
 treeshap <- function(unified_model, x, interactions = FALSE, verbose = TRUE) {
   UseMethod("treeshap", unified_model)
 }
@@ -250,4 +260,3 @@ is.treeshap <- function(x) {
     (is.null(x$interactions) | is.numeric(x$interactions)) &
     (is.numeric(as.matrix(x$shaps)))
 }
-

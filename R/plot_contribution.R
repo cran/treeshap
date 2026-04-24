@@ -17,8 +17,6 @@
 #'
 #' @export
 #'
-#' @import ggplot2
-#'
 #' @seealso
 #' \code{\link{treeshap}} for calculation of SHAP values
 #'
@@ -27,17 +25,25 @@
 #'
 #' @examples
 #' \donttest{
-#' library(xgboost)
-#' data <- fifa20$data[colnames(fifa20$data) != 'work_rate']
-#' target <- fifa20$target
-#' param <- list(objective = "reg:squarederror", max_depth = 3)
-#' xgb_model <- xgboost::xgboost(as.matrix(data), params = param, label = target,
-#'                               nrounds = 20, verbose = FALSE)
-#' unified_model <- xgboost.unify(xgb_model, as.matrix(data))
-#' x <- head(data, 1)
-#' shap <- treeshap(unified_model, x)
-#' plot_contribution(shap, 1,  min_max = c(0, 120000000))
-#' }
+#' if (requireNamespace("xgboost", quietly = TRUE) &&
+#'  requireNamespace("scales", quietly = TRUE)) {
+#'   library(xgboost)
+#'   data <- fifa20$data[colnames(fifa20$data) != 'work_rate']
+#'   target <- fifa20$target
+#'   xgb_model <- xgboost::xgboost(
+#'    x = as.matrix(data),
+#'    y = target,
+#'    objective = "reg:squarederror",
+#'    max_depth = 3,
+#'    nrounds = 20,
+#'    nthreads = 1
+#'   )
+#'   unified_model <- xgboost.unify(xgb_model, as.matrix(data))
+#'   x <- head(data, 1)
+#'   shap <- treeshap(unified_model, x)
+#'   plot_contribution(shap, 1, min_max = c(-5e5, 1.3e8))
+#' }}
+#'
 plot_contribution <- function(treeshap,
                               obs = 1,
                               max_vars = 5,
@@ -46,6 +52,12 @@ plot_contribution <- function(treeshap,
                               explain_deviation = FALSE,
                               title = "SHAP Break-Down",
                               subtitle = "") {
+  if (!requireNamespace("scales", quietly = TRUE)) {
+    stop(
+      "Package \"scales\" needed for this function to work. Please install it.",
+      call. = FALSE
+    )
+  }
 
   shap <- treeshap$shaps[obs, ]
   model <- treeshap$unified_model$model
@@ -143,7 +155,7 @@ plot_contribution <- function(treeshap,
     geom_errorbarh(data = df[-c(nrow(df), if (explain_deviation) nrow(df) - 1), ],
                    aes(xmax = position - 0.85,
                        xmin = position + 0.85,
-                       y = cumulative), height = 0,
+                       y = cumulative), width = 0,
                    color = "#371ea3") +
     geom_rect(alpha = 0.9) +
     if (!explain_deviation) (geom_hline(data = df[df$variable == "intercept", ],

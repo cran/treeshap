@@ -9,8 +9,6 @@
 #'
 #' @return a unified model representation - a \code{\link{model_unified.object}} object
 #'
-#' @import data.table
-#'
 #' @export
 #'
 #' @seealso
@@ -23,7 +21,7 @@
 #' \code{\link{randomForest.unify}} for \code{\link[randomForest:randomForest]{randomForest models}}
 #'
 #' @examples
-#'
+#' if (requireNamespace("ranger", quietly = TRUE)) {
 #'  library(ranger)
 #'  data_fifa <- fifa20$data[!colnames(fifa20$data) %in%
 #'                             c('work_rate', 'value_eur', 'gk_diving', 'gk_handling',
@@ -34,6 +32,7 @@
 #'  unified_model <- ranger.unify(rf, data)
 #'  shaps <- treeshap(unified_model, data[1:2,])
 #'  plot_contribution(shaps, obs = 1)
+#' }
 ranger.unify <- function(rf_model, data) {
   if(!'ranger' %in% class(rf_model)) {
     stop('Object rf_model was not of class "ranger"')
@@ -41,6 +40,10 @@ ranger.unify <- function(rf_model, data) {
   n <- rf_model$num.trees
   x <- lapply(1:n, function(tree) {
     tree_data <- data.table::as.data.table(ranger::treeInfo(rf_model, tree = tree))
+    # Fix for probability forests
+    if (rf_model$treetype == "Probability estimation") {
+      data.table::setnames(tree_data, "pred.1", "prediction")
+    }
     tree_data[, c("nodeID",  "leftChild", "rightChild", "splitvarName", "splitval", "prediction")]
   })
   return(ranger_unify.common(x = x, n = n, data = data, feature_names = rf_model$forest$independent.variable.names))

@@ -1,10 +1,10 @@
-# should be preceded with lgb.model.dt.tree
-#' Unify LightGBM model
+# should be preceded with gpb.model.dt.tree
+#' Unify GPBoost model
 #'
-#' Convert your LightGBM model into a standardized representation.
+#' Convert your GPBoost model into a standardized representation.
 #' The returned representation is easy to be interpreted by the user and ready to be used as an argument in \code{treeshap()} function.
 #'
-#' @param lgb_model A lightgbm model - object of class \code{lgb.Booster}
+#' @param gpb_model A gpboost model - object of class \code{gpb.Booster}
 #' @param data Reference dataset. A \code{data.frame} or \code{matrix} with the same columns as in the training set of the model. Usually dataset used to train model.
 #' @param recalculate logical indicating if covers should be recalculated according to the dataset given in data. Keep it \code{FALSE} if training data are used.
 #'
@@ -12,11 +12,15 @@
 #'
 #' @export
 #'
+#' @import data.table
+#'
 #' @seealso
 #'
 #' \code{\link{gbm.unify}} for \code{\link[gbm:gbm]{GBM models}}
 #'
 #' \code{\link{xgboost.unify}} for \code{\link[xgboost:xgboost]{XGBoost models}}
+#'
+#' \code{\link{lightgbm.unify}} for \code{\link[lightgbm:lightgbm]{LightGBM models}}
 #'
 #' \code{\link{ranger.unify}} for \code{\link[ranger:ranger]{ranger models}}
 #'
@@ -24,36 +28,29 @@
 #'
 #' @examples
 #' \donttest{
-#' if (requireNamespace("lightgbm", quietly = TRUE) &&
-#'  requireNamespace("jsonlite", quietly = TRUE)) {
-#'   library(lightgbm)
-#'   param_lgbm <- list(objective = "regression", max_depth = 2,
+#' if (requireNamespace("gpboost", quietly = TRUE)) {
+#'   library(gpboost)
+#'   param_gpb <- list(objective = "regression", max_depth = 2,
 #'                      force_row_wise = TRUE, num_iterations = 20)
 #'   data_fifa <- fifa20$data[!colnames(fifa20$data) %in%
 #'                c('work_rate', 'value_eur', 'gk_diving', 'gk_handling',
 #'                'gk_kicking', 'gk_reflexes', 'gk_speed', 'gk_positioning')]
 #'   data <- na.omit(cbind(data_fifa, fifa20$target))
 #'   sparse_data <- as.matrix(data[,-ncol(data)])
-#'   x <- lightgbm::lgb.Dataset(sparse_data, label = as.matrix(data[,ncol(data)]))
-#'   lgb_data <- lightgbm::lgb.Dataset.construct(x)
-#'   lgb_model <- lightgbm::lightgbm(data = lgb_data, params = param_lgbm,
+#'   x <- gpboost::gpb.Dataset(sparse_data, label = as.matrix(data[,ncol(data)]))
+#'   gpb_data <- gpboost::gpb.Dataset.construct(x)
+#'   gpb_model <- gpboost::gpboost(data = gpb_data, params = param_gpb,
 #'                                   verbose = -1, num_threads = 1)
-#'   unified_model <- lightgbm.unify(lgb_model, sparse_data)
+#'   unified_model <- gpboost.unify(gpb_model, sparse_data)
 #'   shaps <- treeshap(unified_model, data[1:2, ])
 #'   plot_contribution(shaps, obs = 1)
 #' }}
-lightgbm.unify <- function(lgb_model, data, recalculate = FALSE) {
-  if (!requireNamespace("lightgbm", quietly = TRUE)) {
-    stop("Package \"lightgbm\" needed for this function to work. Please install it.",
+gpboost.unify <- function(gpb_model, data, recalculate = FALSE) {
+  if (!requireNamespace("gpboost", quietly = TRUE)) {
+    stop("Package \"gpboost\" needed for this function to work. Please install it.",
          call. = FALSE)
   }
-  if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    stop(
-      "Package \"jsonlite\" needed for this function to work. Please install it.",
-      call. = FALSE
-    )
-  }
-  df <- lightgbm::lgb.model.dt.tree(lgb_model)
+  df <- gpboost::gpb.model.dt.tree(gpb_model)
   stopifnot(c("split_index", "split_feature", "node_parent", "leaf_index", "leaf_parent", "internal_value",
               "internal_count", "leaf_value", "leaf_count", "decision_type") %in% colnames(df))
   df <- data.table::as.data.table(df)
@@ -73,58 +70,19 @@ lightgbm.unify <- function(lgb_model, data, recalculate = FALSE) {
   # On the basis of column 'Parent', create columns with childs: 'Yes', 'No' and 'Missing' like in the xgboost df:
   ret.first <- function(x) x[1]
   ret.second <- function(x) x[2]
-  tmp <- data.table::merge.data.table(
-    df[, .(node_parent, tree_index, split_index)],
-    df[, .(tree_index, split_index, default_left, decision_type)],
-    by.x = c("tree_index", "node_parent"),
-    by.y = c("tree_index", "split_index")
-  )
-  y_n_m <- unique(tmp[,
-    .(
-      Yes = ifelse(
-        decision_type %in% c("<=", "<"),
-        ret.first(split_index),
-        ifelse(
-          decision_type %in% c(">=", ">"),
-          ret.second(split_index),
-          stop("Unknown decision_type")
-        )
-      ),
-      No = ifelse(
-        decision_type %in% c(">=", ">"),
-        ret.first(split_index),
-        ifelse(
-          decision_type %in% c("<=", "<"),
-          ret.second(split_index),
-          stop("Unknown decision_type")
-        )
-      ),
-      Missing = ifelse(
-        default_left,
-        ret.first(split_index),
-        ret.second(split_index)
-      ),
-      decision_type = decision_type
-    ),
-    .(tree_index, node_parent)
-  ])
-  df <- data.table::merge.data.table(
-    df[, c(
-      "tree_index",
-      "depth",
-      "split_index",
-      "split_feature",
-      "node_parent",
-      "split_gain",
-      "threshold",
-      "internal_value",
-      "internal_count"
-    )],
-    y_n_m,
-    by.x = c("tree_index", "split_index"),
-    by.y = c("tree_index", "node_parent"),
-    all.x = TRUE
-  )
+  tmp <- data.table::merge.data.table(df[, .(node_parent, tree_index, split_index)], df[, .(tree_index, split_index, default_left, decision_type)],
+                                      by.x = c("tree_index", "node_parent"), by.y = c("tree_index", "split_index"))
+  y_n_m <- unique(tmp[, .(Yes = ifelse(decision_type %in% c("<=", "<"), ret.first(split_index),
+                                       ifelse(decision_type %in% c(">=", ">"), ret.second(split_index), stop("Unknown decision_type"))),
+                          No = ifelse(decision_type %in% c(">=", ">"), ret.first(split_index),
+                                      ifelse(decision_type %in% c("<=", "<"), ret.second(split_index), stop("Unknown decision_type"))),
+                          Missing = ifelse(default_left, ret.first(split_index),ret.second(split_index)),
+                          decision_type = decision_type),
+                      .(tree_index, node_parent)])
+  df <- data.table::merge.data.table(df[, c("tree_index", "depth", "split_index", "split_feature", "node_parent", "split_gain",
+                                            "threshold", "internal_value", "internal_count")],
+                                     y_n_m, by.x = c("tree_index", "split_index"),
+                                     by.y = c("tree_index", "node_parent"), all.x = TRUE)
   df[decision_type == ">=", decision_type := "<"]
   df[decision_type == ">", decision_type := "<="]
   df$Decision.type <- factor(x = df$decision_type, levels = c("<=", "<"))
@@ -141,13 +99,13 @@ lightgbm.unify <- function(lgb_model, data, recalculate = FALSE) {
   # Here we lose "Quality" information
   df$Prediction[!is.na(df$Feature)] <- NA
 
-  feature_names <- jsonlite::fromJSON(lgb_model$dump_model())$feature_names
+  feature_names <- jsonlite::fromJSON(gpb_model$dump_model())$feature_names
   data <- data[,colnames(data) %in% feature_names]
 
   ret <- list(model = as.data.frame(df), data = as.data.frame(data), feature_names = feature_names)
   class(ret) <- "model_unified"
   attr(ret, "missing_support") <- TRUE
-  attr(ret, "model") <- "LightGBM"
+  attr(ret, "model") <- "gpboost"
 
   if (recalculate) {
     ret <- set_reference_dataset(ret, as.data.frame(data))
